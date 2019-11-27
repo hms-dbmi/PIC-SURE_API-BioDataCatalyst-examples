@@ -5,30 +5,29 @@ import numpy as np
 def get_multiIndex_variablesTable(variablesTable: pd.DataFrame) -> pd.DataFrame:
 
     def _varName_toMultiIndex(index_varDictionnary: pd.Index) -> pd.MultiIndex:
-        long_names = index_varDictionnary.to_list()
+        long_names = index_varDictionnary.tolist()
         splits = [long_name.strip('\\').split('\\') for long_name in long_names]
         multi_index = pd.MultiIndex.from_tuples(splits)
         return multi_index
-    
+
     def _get_simplified_varname(variablesTable_index: pd.MultiIndex) -> pd.DataFrame:
-        tup_index = variablesTable_index.to_list()
+        tup_index = variablesTable_index.tolist()
         last_valid_name_list = [[x for x in tup if str(x) != 'nan'][-1] for tup in tup_index]
         return last_valid_name_list
-    
+
     variablesTable = variablesTable.rename_axis("varName", axis=0).sort_index()
     multi_index = _varName_toMultiIndex(variablesTable.index)
     last_valid_name_list = _get_simplified_varname(multi_index)
     variablesTable = variablesTable.reset_index(drop=False)
-    variablesTable.index = multi_index    
+    variablesTable.index = multi_index
     variablesTable["simplified_varName"] = last_valid_name_list
-    columns_order = ["varName", "simplified_varName"] + \
-        variablesTable.drop(["varName", "simplified_varName"], axis=1).columns.to_list()
+    columns_order = ["simplified_varName", "varName", "observationCount", "categorical", "categoryValues", "min", "max", "HpdsDataType"]
     return variablesTable[columns_order]
 
 
 def get_dic_renaming_vars(variablesTable: pd.DataFrame) -> dict:
-    simplified_varName = variablesTable["simplified_varName"].to_list()
-    varName = variablesTable["varName"].to_list()
+    simplified_varName = variablesTable["simplified_varName"].tolist()
+    varName = variablesTable["varName"].tolist()
     dic_renaming = {long: simple for long, simple in zip(varName, simplified_varName)}
     return dic_renaming
 
