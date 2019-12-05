@@ -1,0 +1,17 @@
+{
+    "csc": {
+        "url": "https://curesc.hms.harvard.edu/picsure/",
+        "resource": "37663534-6161-3830-6264-323031316539",
+        "token_file": "./tokens/csc.txt"
+    },
+    "copd": {
+        "url": "https://copdgene-dev.hms.harvard.edu/picsure/",
+        "resource": "b6ef7b1a-56f6-11e9-8958-0242c0a83007",
+        "token_file": "./tokens/copd.txt"
+    }, 
+    "DataSTAGE_dev": {
+        "url": "https://ec2-54-196-149-42.compute-1.amazonaws.com/picsure/",
+        "resource": "02e23f52-f354-4e8b-992c-d37c8b9ba140",
+        "token_file": "./tokens/DataSTAGE_dev.txt"
+    }
+}
