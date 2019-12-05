@@ -11,7 +11,7 @@ get_multiIndex <- function(variablesDict) {
     splitted <- gsub("^\\\\", "", variablesDict[["name"]]) %>% 
         strsplit("\\\\") 
     multiIndex <- lapply(splitted, function(x) {
-        names(x) <- paste("level", 1:length(x))
+        names(x) <- paste("depth", 1:length(x))
         return(x)
     }) %>% do.call(dplyr::bind_rows, .)
     multiIndex[["name"]] <- variablesDict[["name"]]
@@ -30,7 +30,7 @@ checking_parsing <- function(df_varNames, parsed_varNames) {
     tryCatch({
         stopifnot(all(df_varNames %in% parsed_varNames)) 
         stopifnot(all(parsed_varNames %in% df_varNames))        
-        print("Parsing OK!")
+        print("Every names match!")
     }, warning = function(w) {
         
     }, error = function(e) {
