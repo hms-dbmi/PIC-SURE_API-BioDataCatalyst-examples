@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def get_multiIndex_variablesTable(variablesTable: pd.DataFrame) -> pd.DataFrame:
+def get_multiIndex_variablesDict(variablesDict: pd.DataFrame) -> pd.DataFrame:
 
     def _varName_toMultiIndex(index_varDictionnary: pd.Index) -> pd.MultiIndex:
         long_names = index_varDictionnary.tolist()
@@ -10,24 +10,24 @@ def get_multiIndex_variablesTable(variablesTable: pd.DataFrame) -> pd.DataFrame:
         multi_index = pd.MultiIndex.from_tuples(splits)
         return multi_index
 
-    def _get_simplified_varname(variablesTable_index: pd.MultiIndex) -> pd.DataFrame:
-        tup_index = variablesTable_index.tolist()
+    def _get_simplified_varname(variablesDict_index: pd.MultiIndex) -> pd.DataFrame:
+        tup_index = variablesDict_index.tolist()
         last_valid_name_list = [[x for x in tup if str(x) != 'nan'][-1] for tup in tup_index]
         return last_valid_name_list
 
-    variablesTable = variablesTable.rename_axis("varName", axis=0).sort_index()
-    multi_index = _varName_toMultiIndex(variablesTable.index)
+    variablesDict = variablesDict.rename_axis("varName", axis=0).sort_index()
+    multi_index = _varName_toMultiIndex(variablesDict.index)
     last_valid_name_list = _get_simplified_varname(multi_index)
-    variablesTable = variablesTable.reset_index(drop=False)
-    variablesTable.index = multi_index
-    variablesTable["simplified_varName"] = last_valid_name_list
+    variablesDict = variablesDict.reset_index(drop=False)
+    variablesDict.index = multi_index.rename(["level " + str(n) for n, _ in enumerate(multi_index.names)])
+    variablesDict["simplified_varName"] = last_valid_name_list
     columns_order = ["simplified_varName", "varName", "observationCount", "categorical", "categoryValues", "min", "max", "HpdsDataType"]
-    return variablesTable[columns_order]
+    return variablesDict[columns_order]
 
 
-def get_dic_renaming_vars(variablesTable: pd.DataFrame) -> dict:
-    simplified_varName = variablesTable["simplified_varName"].tolist()
-    varName = variablesTable["varName"].tolist()
+def get_dic_renaming_vars(variablesDict: pd.DataFrame) -> dict:
+    simplified_varName = variablesDict["simplified_varName"].tolist()
+    varName = variablesDict["varName"].tolist()
     dic_renaming = {long: simple for long, simple in zip(varName, simplified_varName)}
     return dic_renaming
 
@@ -42,24 +42,24 @@ def match_dummies_to_varNames(plain_columns: pd.Index,
     return matching_df
 
 
-def joining_variablesTable_onCol(variablesTable: pd.DataFrame,
+def joining_variablesDict_onCol(variablesDict: pd.DataFrame,
                                  df: pd.DataFrame,
                                  left_col="simplified_varName",
                                  right_col="simplified_varName",
                                 overwrite: bool = True) ->pd.DataFrame:
-    # Allow to join a df to variablesTable on a specified columns, keeping the MultiIndex
-    # Might become a method of object variablesTable because very specific
-    variablesTable_to_join = variablesTable.reset_index(drop=False).set_index(left_col)
+    # Allow to join a df to variablesDict on a specified columns, keeping the MultiIndex
+    # Might become a method of object variablesDict because very specific
+    variablesDict_to_join = variablesDict.reset_index(drop=False).set_index(left_col)
     df_to_join = df.set_index(right_col)
-    variablesTable_index_names = [col for col in variablesTable_to_join.columns if col not in variablesTable.columns]
-    if np.any([col in variablesTable_to_join.columns for col in  df_to_join.columns]):
-        col_overlap = [col for col in  df_to_join.columns if col in variablesTable_to_join.columns]
+    variablesDict_index_names = [col for col in variablesDict_to_join.columns if col not in variablesDict.columns]
+    if np.any([col in variablesDict_to_join.columns for col in  df_to_join.columns]):
+        col_overlap = [col for col in  df_to_join.columns if col in variablesDict_to_join.columns]
         if overwrite is True:
-            variablesTable_to_join = variablesTable_to_join.drop(col_overlap, axis=1)
+            variablesDict_to_join = variablesDict_to_join.drop(col_overlap, axis=1)
         else:
             print("{0} already in variableTable".format(col_overlap))
-            return variablesTable
-    variablesTable_joined = variablesTable_to_join.join(df_to_join, how="left")
-    variablesTable_joined = variablesTable_joined.reset_index(drop=False)\
-        .set_index(variablesTable_index_names)
-    return variablesTable_joined
+            return variablesDict
+    variablesDict_joined = variablesDict_to_join.join(df_to_join, how="left")
+    variablesDict_joined = variablesDict_joined.reset_index(drop=False)\
+        .set_index(variablesDict_index_names)
+    return variablesDict_joined
