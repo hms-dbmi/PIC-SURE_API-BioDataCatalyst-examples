@@ -19,7 +19,7 @@ def get_multiIndex_variablesDict(variablesDict: pd.DataFrame) -> pd.DataFrame:
     multi_index = _varName_toMultiIndex(variablesDict.index)
     last_valid_name_list = _get_simplified_varname(multi_index)
     variablesDict = variablesDict.reset_index(drop=False)
-    variablesDict.index = multi_index.rename(["level " + str(n) for n, _ in enumerate(multi_index.names)])
+    variablesDict.index = multi_index.rename(["level_" + str(n) for n, _ in enumerate(multi_index.names)])
     variablesDict["simplified_varName"] = last_valid_name_list
     columns_order = ["simplified_varName", "varName", "observationCount", "categorical", "categoryValues", "min", "max", "HpdsDataType"]
     return variablesDict[columns_order]
