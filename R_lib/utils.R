@@ -11,7 +11,7 @@ get_multiIndex <- function(variablesDict) {
     splitted <- gsub("^\\\\", "", variablesDict[["name"]]) %>% 
         strsplit("\\\\") 
     multiIndex <- lapply(splitted, function(x) {
-        names(x) <- paste("depth", 1:length(x))
+        names(x) <- paste0("level_", 1:length(x))
         return(x)
     }) %>% do.call(dplyr::bind_rows, .)
     multiIndex[["name"]] <- variablesDict[["name"]]
