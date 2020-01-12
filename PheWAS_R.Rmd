@@ -31,7 +31,7 @@ This notebook is an illustration example of how to use the R **PIC-SURE API** to
 
 ### Packages installation
 
-```{r jupyter={'outputs_hidden': True}}
+```{r}
 list_packages <- c("ggrepel",
                    "jsonlite", 
                    "ggplot2",
