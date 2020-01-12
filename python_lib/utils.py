@@ -14,14 +14,23 @@ def get_multiIndex_variablesDict(variablesDict: pd.DataFrame) -> pd.DataFrame:
         tup_index = variablesDict_index.tolist()
         last_valid_name_list = [[x for x in tup if str(x) != 'nan'][-1] for tup in tup_index]
         return last_valid_name_list
-
+    
+    def _get_number_modalities(categoryValues: pd.Series) -> pd.Series:
+        for elem in categoryValues:
+            if isinstance(elem, list):
+                yield len(elem)
+            else:
+                yield np.NaN
+        
+    
     variablesDict = variablesDict.rename_axis("varName", axis=0).sort_index()
     multi_index = _varName_toMultiIndex(variablesDict.index)
     last_valid_name_list = _get_simplified_varname(multi_index)
     variablesDict = variablesDict.reset_index(drop=False)
     variablesDict.index = multi_index.rename(["level_" + str(n) for n, _ in enumerate(multi_index.names)])
+    variablesDict["nb_modalities"] = list(_get_number_modalities(variablesDict["categoryValues"]))
     variablesDict["simplified_varName"] = last_valid_name_list
-    columns_order = ["simplified_varName", "varName", "observationCount", "categorical", "categoryValues", "min", "max", "HpdsDataType"]
+    columns_order = ["simplified_varName", "varName", "observationCount", "categorical", "categoryValues", "nb_modalities", "min", "max", "HpdsDataType"]
     return variablesDict[columns_order]
 
 
