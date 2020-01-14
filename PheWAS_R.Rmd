@@ -39,7 +39,6 @@ list_packages <- c("ggrepel",
                    "dplyr",
                    "tidyr",
                    "purrr",
-                   "stringr",
                    "devtools")
 
 for (package in list_packages){
