@@ -52,8 +52,8 @@ for (package in list_packages){
 #### Installing latest R PIC-SURE API libraries from github
 
 ```{r}
-devtools::install_github("hms-dbmi/pic-sure-r-client")
-devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds")
+devtools::install_github("hms-dbmi/pic-sure-r-client", force=T)
+devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T)
 ```
 
 #### Loading user-defined functions
@@ -102,15 +102,17 @@ This analysis is conducted using COPDGene Study data. The study overall goal is 
 ### 1. Retrieving variable dictionary from HPDS Database
 
 ```{r}
-all_variables <- hpds::find.in.dictionary(resource, "Genetic Epidemiology of COPD (COPDGene)")
+copdgene_variables <- hpds::find.in.dictionary(resource, "Genetic Epidemiology of COPD (COPDGene)")
+consent_variable <- hpds::find.in.dictionary(resource, "Study Accession with Consent Code")
 ```
 
 ```{r}
-variablesDict <- hpds::extract.dataframe(all_variables)
-variablesDict <- variablesDict[order(variablesDict["name"]),]
+copdgene_dic <- hpds::extract.dataframe(copdgene_variables)
+consent_dic <- hpds::extract.dataframe(consent_variable)
+variablesDict <- dplyr::bind_rows(copdgene_dic, consent_dic) %>% dplyr::arrange(name)
 ```
 
-```{r}
+```{r jupyter={'outputs_hidden': True}}
 # Display the variables tree hierarchy from the variables name
 multiIndex <- get_multiIndex(variablesDict)
 head(multiIndex)
@@ -122,21 +124,39 @@ head(multiIndex)
 Subseting to keep only the phenotypical variables + the "affection status", that will be used as the dependent variable for this illustration use-case.
 
 ```{r}
+mask_copdgene <- multiIndex["level_1"] == 'Genetic Epidemiology of COPD (COPDGene)'
 mask_pheno <- multiIndex["level_2"] == 'Subject Phenotype'
 mask_status <- multiIndex["level_3"] == 'Affection status'
 mask_to_drop <- multiIndex[["simplified_name"]] %in% list("Dbgap_id", "De-identified site code", "A1AD: phenotype/genotype")
-mask_vars <- (mask_pheno | mask_status) & !mask_to_drop
-selected_vars <- variablesDict[mask_vars, "name"]
+mask_vars <- mask_copdgene & (mask_pheno | mask_status) & !mask_to_drop
+selected_vars <- variablesDict[mask_vars, "name"] %>% as.list()
 ```
 
 ```{r}
 print(selected_vars[1:5])
 ```
 
+Here we use the accession number of COPDGene study to select only the records that do match this strings.
+
+```{r}
+phs_values = strsplit(consent_dic[["categoryValues"]], ",") %>% unlist()
+phs_copdgene = grep("phs000179\\.*", phs_values, perl=T, value=T) %>% as.list()
+# phs_copdgene = do.call(list, list(phs_copdgene))
+```
+
 Retrieving the data:
 
 ```{r}
 my_query = hpds::new.query(resource = resource)
+```
+
+```{r}
+hpds::query.filter.add(query = my_query, 
+                      keys = consent_dic[["name"]], 
+                      phs_copdgene)
+```
+
+```{r}
 hpds::query.select.add(query = my_query, 
                       keys = selected_vars)
 facts = hpds::query.run(query = my_query, result.type = "dataframe")
