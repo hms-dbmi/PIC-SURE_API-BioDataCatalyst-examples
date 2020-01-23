@@ -112,7 +112,7 @@ consent_dic <- hpds::extract.dataframe(consent_variable)
 variablesDict <- dplyr::bind_rows(copdgene_dic, consent_dic) %>% dplyr::arrange(name)
 ```
 
-```{r jupyter={'outputs_hidden': True}}
+```{r}
 # Display the variables tree hierarchy from the variables name
 multiIndex <- get_multiIndex(variablesDict)
 head(multiIndex)
