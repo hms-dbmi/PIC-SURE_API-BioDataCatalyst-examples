@@ -71,7 +71,7 @@ token_file <- "token.txt"
 ```
 
 ```{r}
-token <- TokenManager(token_file)
+token <- scan(token_file, what = "character")
 ```
 
 ```{r}
