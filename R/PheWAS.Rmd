@@ -102,20 +102,33 @@ This analysis is conducted using COPDGene Study data. The study overall goal is 
 ### 1. Retrieving variable dictionary from HPDS Database
 
 ```{r}
-copdgene_variables <- hpds::find.in.dictionary(resource, "Genetic Epidemiology of COPD (COPDGene)")
-consent_variable <- hpds::find.in.dictionary(resource, "Study Accession with Consent Code")
+copdgene_dic <- hpds::find.in.dictionary(resource, "Genetic Epidemiology of COPD (COPDGene)") %>%
+                      hpds::extract.dataframe()
+consent_dic <- hpds::find.in.dictionary(resource, "Study Accession with Consent Code") %>%
+                    hpds::extract.dataframe()
+plain_variablesDict <- dplyr::bind_rows(copdgene_dic, consent_dic) %>% dplyr::arrange(name)
 ```
 
 ```{r}
-copdgene_dic <- hpds::extract.dataframe(copdgene_variables)
-consent_dic <- hpds::extract.dataframe(consent_variable)
-variablesDict <- dplyr::bind_rows(copdgene_dic, consent_dic) %>% dplyr::arrange(name)
+get_multiIndex_variablesDict <- function(variablesDict) {
+    splitted <- gsub("^\\\\", "", variablesDict[["name"]]) %>% 
+        strsplit("\\\\") 
+    multiIndex <- lapply(splitted, function(x) {
+        names(x) <- paste0("level_", 1:length(x) - 1)
+        return(x)
+    }) %>% do.call(dplyr::bind_rows, .)
+    multiIndex[["name"]] <- variablesDict[["name"]]
+    multiIndex[["simplified_name"]] <- sapply(splitted, function(x) x[length(x)])
+    multiIndex <- dplyr::left_join(multiIndex, variablesDict, by="name")
+    columns_order <- c("simplified_name", "name", "observationCount", "categorical", "categoryValues", "nb_modalities", "min", "max", "HpdsDataType")
+    return(multiIndex[columns_order])
+}
 ```
 
 ```{r}
 # Display the variables tree hierarchy from the variables name
-multiIndex <- get_multiIndex(variablesDict)
-head(multiIndex)
+variablesDict <- get_multiIndex_variablesDict(plain_variablesDict)
+variablesDict[10:20,]
 ```
 
 ### 2. Selecting variables and retrieving data from HPDS
@@ -124,10 +137,10 @@ head(multiIndex)
 Subseting to keep only the phenotypical variables + the "affection status", that will be used as the dependent variable for this illustration use-case.
 
 ```{r}
-mask_copdgene <- multiIndex["level_1"] == 'Genetic Epidemiology of COPD (COPDGene)'
-mask_pheno <- multiIndex["level_2"] == 'Subject Phenotype'
-mask_status <- multiIndex["level_3"] == 'Affection status'
-mask_to_drop <- multiIndex[["simplified_name"]] %in% list("Dbgap_id", "De-identified site code", "A1AD: phenotype/genotype")
+mask_copdgene <- variablesDict["level_1"] == 'Genetic Epidemiology of COPD (COPDGene)'
+mask_pheno <- variablesDict["level_2"] == 'Subject Phenotype'
+mask_status <- variablesDict["level_3"] == 'Affection status'
+mask_to_drop <- variablesDict[["simplified_name"]] %in% list("Dbgap_id", "De-identified site code", "A1AD: phenotype/genotype")
 mask_vars <- mask_copdgene & (mask_pheno | mask_status) & !mask_to_drop
 selected_vars <- variablesDict[mask_vars, "name"] %>% as.list()
 ```
@@ -136,12 +149,11 @@ selected_vars <- variablesDict[mask_vars, "name"] %>% as.list()
 print(selected_vars[1:5])
 ```
 
-Here we use the accession number of COPDGene study to select only the records that do match this strings.
+Here we use the accession number of COPDGene study to select only the records that those accession study values.
 
 ```{r}
 phs_values = strsplit(consent_dic[["categoryValues"]], ",") %>% unlist()
 phs_copdgene = grep("phs000179\\.*", phs_values, perl=T, value=T) %>% as.list()
-# phs_copdgene = do.call(list, list(phs_copdgene))
 ```
 
 Retrieving the data:
@@ -177,7 +189,7 @@ Since variable names are not the same between the dictionary and the dataframe c
 
 ```{r}
 variablesDict[["df_name"]] <- parsing_varNames(variablesDict[["name"]])
-multiIndex[["df_name"]] <- variablesDict[["df_name"]]
+variablesDict[["df_name"]] <- variablesDict[["df_name"]]
 ```
 
 ```{r}
@@ -201,7 +213,7 @@ Most of PheWAS use a genetic variant as the variable used to separate the popula
 Here we will use the **COPD status** as the case-control variable to dichotomize the population in our analysis (ie the dependent variable for which univariate association test will be run against).
 
 ```{r}
-dependent_varname <- multiIndex[multiIndex[["simplified_name"]] == "Affection status",][["df_name"]]
+dependent_varname <- variablesDict[variablesDict[["simplified_name"]] == "Affection status",][["df_name"]]
 categorical_varnames <- categorical_varnames[-which(categorical_varnames == dependent_varname)]
 ```
 
@@ -298,7 +310,7 @@ df_pvalues[["log_pvalues"]] <- -log10(df_pvalues$pvalues)
 ```
 
 ```{r}
-multiIndex_enhanced <- dplyr::left_join(multiIndex, df_pvalues, by="df_name")
+variablesDict_enhanced <- dplyr::left_join(variablesDict, df_pvalues, by="df_name")
 variablesDict_enhanced <- dplyr::left_join(variablesDict, df_pvalues, by="df_name")
 ```
 
@@ -352,10 +364,10 @@ adj_corrected_alpha <- -log10(corrected_alpha)
 
 ```{r}
 non_nan <- which(!is.na(variablesDict_enhanced$pvalues))
-plot_df <- multiIndex_enhanced[non_nan, ]
+plot_df <- variablesDict_enhanced[non_nan, ]
 plot_df$log_pvalues <- round(plot_df$log_pvalues, 5)
 
-plot_df = multiIndex[, c("df_name", "level_3")] %>% 
+plot_df = variablesDict[, c("df_name", "level_3")] %>% 
 plyr::rename(replace = c("level_3" = "category")) %>%
 right_join(plot_df, by="df_name")
 
