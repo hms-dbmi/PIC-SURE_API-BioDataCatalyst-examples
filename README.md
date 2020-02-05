@@ -1,4 +1,8 @@
+**ARCHIVED REPOSITORY: the content of this repo has been moved, and the latest versions are now available in https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API, under the `/NHLBI_BioData_Catalyst/` folder**
+
 # PIC-SURE_API BioData Catalyst examples
+
+
 Jupyter Notebooks examples of PIC-SURE API use-cases, using BioData Catalyst studies. PIC-SURE API is available in two languages --R and python. PIC-SURE API requires R 3.5 or later, or python 3.6 or later.
 
 ## Installing the repository
