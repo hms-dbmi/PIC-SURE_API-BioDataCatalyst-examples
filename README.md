@@ -1,4 +1,4 @@
-**ARCHIVED REPOSITORY: the content of this repo has been moved, and the latest versions are now available in https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API, under the `/NHLBI_BioData_Catalyst/` folder**
+**🛑 ARCHIVED REPOSITORY 🛑: the content of this repo has been moved, and the latest versions are now available in https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API, under the `/NHLBI_BioData_Catalyst/` folder**
 
 # PIC-SURE_API BioData Catalyst examples
 
